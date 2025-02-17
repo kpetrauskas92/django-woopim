@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        h2 { border-bottom: 2px solid #ddd; padding-bottom: 5px; margin-top: 20px; }
+        ul { list-style: none; padding: 0; }
+        ul li { background: #f9f9f9; padding: 5px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>{{ product.name }}</h1>
+    <img src="{{ product.image_url }}" width="250">
+    
+    <p><strong>ID:</strong> {{ product.woo_id }}</p>
+    <p><strong>SKU:</strong> {{ product.sku }}</p>
+    <p><strong>Full Price:</strong> €{{ product.full_price }}</p>
+    <p><strong>Sale Price:</strong> €{{ product.sale_price }}</p>
+    <p><strong>Discount:</strong> {% if product.discount_percentage %}{{ product.discount_percentage }}%{% else %}-{% endif %}</p>
+    <p><strong>Status:</strong> {{ product.status }}</p>
+    <p><strong>Stock Status:</strong> {{ product.stock_status }}</p>
+    <p><strong>Stock Quantity:</strong> {{ product.stock_quantity }}</p>
+    <p><strong>Shipping Class:</strong> {{ product.shipping_class }}</p>
+    <p><strong>In Special Offers:</strong> {% if product.special_offers %}✅{% else %}❌{% endif %}</p>
+    <p><a href="{{ product.permalink }}" target="_blank">🔗 View on WooCommerce</a></p>
+
+    <hr>
+
+    <h2>Product Details</h2>
+    <p><strong>Short Description:</strong> {{ product.short_description|safe }}</p>
+    <p><strong>Description:</strong> {{ product.description|safe }}</p>
+
+    <h2>Categories</h2>
+    <ul>
+        {% for category in product.categories %}
+            <li>{{ category }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Tags</h2>
+    <ul>
+        {% for tag in product.tags %}
+            <li>{{ tag }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Attributes</h2>
+    <ul>
+        {% for attr in product.attributes %}
+            <li><strong>{{ attr.name }}</strong>: {{ attr.option }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Cross-Sell Products</h2>
+    <ul>
+        {% for cross_sell in product.cross_sells %}
+            <li>Product ID: {{ cross_sell }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Weight & Dimensions</h2>
+    <p><strong>Weight:</strong> {{ product.weight }} kg</p>
+    <p><strong>Dimensions:</strong> {{ product.length }} x {{ product.width }} x {{ product.height }} cm</p>
+
+    <h2>Meta Data</h2>
+    <ul>
+        {% for meta in product.meta_data %}
+            <li><strong>{{ meta.key }}</strong>: {{ meta.value }}</li>
+        {% endfor %}
+    </ul>
+
+    {% if product.product_type == "variable" %}
+    <h2>Product Variations</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>SKU</th>
+                <th>Full Price</th>
+                <th>Sale Price</th>
+                <th>Discount %</th>
+                <th>Stock</th>
+                <th>Attributes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for variation in product.variations.all %}
+            <tr>
+                <td>
+                    {% if variation.image_url %}
+                        <img src="{{ variation.image_url }}" width="50">
+                    {% else %}
+                        No Image
+                    {% endif %}
+                </td>
+                <td>{{ variation.sku }}</td>
+                <td>€{{ variation.full_price }}</td>
+                <td>€{{ variation.sale_price }}</td>
+                <td>
+                    {% if variation.discount_percentage %}
+                        {{ variation.discount_percentage }}%
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ variation.stock_quantity }}</td>
+                <td>
+                    {% for attr in variation.attributes %}
+                        {{ attr.name }}: {{ attr.option }}<br>
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <hr>
+    <a href="{% url 'product_list' %}">🔙 Back to Product List</a>
+</body>
+</html>

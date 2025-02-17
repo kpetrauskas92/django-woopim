@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product List</title>
+</head>
+<body>
+    <h1>WooCommerce Product List</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>ID</th>
+                <th>SKU</th>
+                <th>Name</th>
+                <th>Full Price</th>
+                <th>Sale Price</th>
+                <th>Discount %</th>
+                <th>Status</th>
+                <th>Special Offer</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td><img src="{{ product.image_url }}" width="50"></td>
+                <td>{{ product.woo_id }}</td>
+                <td>{% if product.product_type == "variable" %}Variable{% else %}{{ product.sku }}{% endif %}</td>
+                <td>{{ product.name }}</td>
+                <td>€{{ product.full_price }}</td>
+                <td>€{{ product.sale_price }}</td>
+                <td>
+                    {% if product.discount_percentage %}
+                        {{ product.discount_percentage }}%
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ product.stock_quantity }}</td>
+                <td>{{ product.status }}</td>
+                <td>{% if product.special_offers %}✅{% else %}❌{% endif %}</td>
+                <td>
+                    <a href="{% url 'product_detail' product.woo_id %}">🔍 Details</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
