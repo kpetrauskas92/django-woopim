@@ -59,10 +59,6 @@ def sync_products():
                     "meta_data": p.get("meta_data", []),
                     "attributes": p.get("attributes", []),
                     "cross_sells": [c_id for c_id in p.get("cross_sell_ids", [])],
-                    "weight": p.get("weight", "0"),
-                    "length": p["dimensions"]["length"] if "dimensions" in p else None,
-                    "width": p["dimensions"]["width"] if "dimensions" in p else None,
-                    "height": p["dimensions"]["height"] if "dimensions" in p else None,
                     "shipping_class": p.get("shipping_class", ""),
                 }
             )

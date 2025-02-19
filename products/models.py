@@ -21,11 +21,7 @@ class Product(models.Model):
     attributes = models.JSONField(blank=True, null=True)  # General attributes for variable products
     cross_sells = models.JSONField(blank=True, null=True)  # Store linked products
 
-    # Weight, Dimensions & Shipping Class
-    weight = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    length = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    width = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    height = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    # Shipping Class
     shipping_class = models.CharField(max_length=255, blank=True, null=True)
 
     def discount_percentage(self):
