@@ -15,6 +15,7 @@ import os
 from dotenv import load_dotenv
 import dj_database_url
 
+
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -39,7 +40,7 @@ RETAIL_VISTA_PASSWORD = os.getenv("RETAIL_VISTA_PASSWORD")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "django-woopim.onrender.com").split(",")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost,django-woopim.onrender.com").split(",")
 
 
 
