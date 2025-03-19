@@ -19,14 +19,36 @@ PASSWORD = os.getenv("RETAIL_VISTA_PASSWORD")
 COMPANY_NUMBER = os.getenv("RETAIL_VISTA_COMPANY_NUMBER")
 
 
-# 🚀 Setup WebDriver (MAXIMIZED)
 def setup_driver():
     print("🚀 Setting up Selenium WebDriver...")
+
+    # Check if running in production (Render) using an environment variable
+    is_production = os.getenv("RENDER", "False") == "True"
+
     options = webdriver.ChromeOptions()
-    # options.add_argument("--start-maximized")  # Keep browser visible
-    options.add_argument("--headless")
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+    if is_production:
+        print("🌍 Running in PRODUCTION mode...")
+        options.binary_location = "/usr/bin/google-chrome"  # Set custom Chrome binary path
+        options.add_argument("--headless")  # Run in headless mode
+        options.add_argument("--no-sandbox")  # Required for running as root in Render
+        options.add_argument("--disable-dev-shm-usage")  # Avoid shared memory issues
+        options.add_argument("--disable-gpu")  # Not needed for headless mode
+        options.add_argument("--disable-blink-features=AutomationControlled")  # Avoid detection
+
+        # Use the correct ChromeDriver path in Render
+        driver_path = "/usr/bin/chromedriver"
+        driver = webdriver.Chrome(service=Service(driver_path), options=options)
+
+    else:
+        print("💻 Running in DEVELOPMENT mode...")
+        # Use ChromeDriverManager for local development
+        # options.add_argument("--start-maximized")  # Keep browser visible
+        options.add_argument("--headless")  # Run headless if needed
+        options.add_argument("--disable-blink-features=AutomationControlled")
+
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
     return driver
 
 # 🔑 Login Function
