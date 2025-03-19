@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="text-3xl font-bold my-4">📊 Product Dashboard</h1>
+
+<!-- Overview Section -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-semibold">📦 Total Products</h2>
+        <p class="text-2xl">{{ total_products }}</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-semibold">🏷️ On Sale</h2>
+        <p class="text-2xl">{{ on_sale }}</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-semibold">⚙️ Out of Stock</h2>
+        <p class="text-2xl">{{ out_of_stock }}</p>
+    </div>
+</div>
+
+<!-- Special Offers & Requests -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-semibold">🌟 Special Offers</h2>
+        <p class="text-2xl">{{ special_offers }}</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-semibold">🆕 New Products This Week</h2>
+        <p class="text-2xl">{{ new_products }}</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-semibold">📄 New Edit Requests</h2>
+        <p class="text-2xl">{{ new_edit_requests }}</p>
+    </div>
+</div>
+
+<!-- New Product Requests -->
+<div class="bg-white p-4 rounded-lg shadow mt-6">
+    <h2 class="text-xl font-semibold">🛠️ New Product Requests This Week</h2>
+    <p class="text-2xl">{{ new_product_requests }}</p>
+</div>
+
+{% endblock %}

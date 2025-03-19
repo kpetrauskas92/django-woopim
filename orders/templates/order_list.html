@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Orders{% endblock %}
+
+{% block content %}
+<style>
+  .clickable-row:hover {
+    background-color: #e5e7eb !important; /* Tailwind bg-gray-200 */
+    cursor: pointer !important;
+  }
+</style>
+
+
+<!-- Container 1: Syncing with Guided Steps in Collapsibles -->
+<div class="mx-auto bg-white p-6 rounded-lg shadow-md mb-6">
+    <h1 class="text-3xl font-bold mb-4 text-center">Sync Orders</h1>
+    <p class="mb-4 text-center">Follow these steps to sync your orders:</p>
+    <div class="space-y-6">
+      
+      <!-- Collapse for Step 1: Sync WooCommerce Orders -->
+      <div class="collapse bg-base-100 border border-base-300">
+        <input type="checkbox" />
+        <div class="collapse-title font-semibold">
+          Step 1: Sync WooCommerce Orders
+        </div>
+        <div class="collapse-content text-sm">
+          <p class="mb-4">
+            Click the button below to sync your WooCommerce orders.
+          </p>
+          <button id="syncWooOrders" class="btn bg-purple-400 w-full">
+            <span id="wooSyncText">Sync WooCommerce Orders</span>
+            <span id="wooSyncLoading" class="hidden loading loading-spinner"></span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Collapse for Step 2: Select Order Date & Sync RV Orders -->
+      <div class="collapse bg-base-100 border border-base-300">
+        <input type="checkbox" />
+        <div class="collapse-title font-semibold">
+          Step 2: Select Order Date & Sync RV Orders
+        </div>
+        <div class="collapse-content text-sm">
+          <p class="mb-4">
+            Once WooCommerce orders are synced, select a date to scrape orders from Retail Vista.
+            The system will automatically verify if the reference code matches the WooCommerce order ID and check the customer name.
+          </p>
+          <label for="order-date" class="font-bold block mb-2">Select Order Date:</label>
+          <input type="date" id="order-date" class="input input-bordered w-full max-w-xs mb-4" required
+                 min="2025-01-01" max="2025-12-31" title="Date not valid">
+          <div class="flex items-center gap-4">
+            <button id="syncOrders" class="btn btn-primary flex-1">
+              <span id="syncText">Sync RV Orders</span>
+              <span id="syncLoading" class="hidden loading loading-spinner ml-2"></span>
+            </button>
+            <button id="cancelSync" class="btn btn-error hidden">
+              Cancel Sync
+            </button>
+          </div>
+          <div id="sync-status-container" class="mt-2"></div>
+        </div>
+      </div>
+      
+      <!-- Collapse for Step 3: View Sync Logs -->
+      <div class="collapse bg-base-100 border border-base-300">
+        <input type="checkbox" />
+        <div class="collapse-title font-semibold">
+          Step 3: View Sync Logs
+        </div>
+        <div class="collapse-content text-sm">
+          <p class="mb-4">
+            After syncing, reload the page to see the updates. The logs are kept for debugging purposes to show any errors or issues.
+          </p>
+          <button class="btn btn-neutral w-full" onclick="openSyncLogModal()">
+            📄 View Sync Logs
+          </button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+<!-- Container 2: Orders with Filtering -->
+<div class="mx-auto bg-white p-6 rounded-lg shadow-md">
+    <div class="w-full text-center">
+        <div class="flex flex-wrap justify-center gap-2">
+          <span class="bg-yellow-200 text-yellow-800 px-3 py-1 rounded">⏳ Pending: {{ status_counts.pending }}</span>
+          <span class="bg-blue-200 text-blue-800 px-3 py-1 rounded">🔄 Processing: {{ status_counts.processing }}</span>
+          <span class="bg-green-200 text-green-800 px-3 py-1 rounded">✅ Completed: {{ status_counts.completed }}</span>
+          <span class="bg-red-200 text-red-800 px-3 py-1 rounded">❌ Cancelled: {{ status_counts.cancelled }}</span>
+          <span class="bg-gray-200 text-gray-800 px-3 py-1 rounded">💰 Refunded: {{ status_counts.refunded }}</span>
+          <span class="bg-purple-200 text-purple-800 px-3 py-1 rounded">⚠️ Failed: {{ status_counts.failed }}</span>
+          <span class="bg-orange-200 text-orange-800 px-3 py-1 rounded">🕒 On Hold: {{ status_counts.on_hold }}</span>
+        </div>
+      </div>
+  <!-- Filtering Form -->
+<form method="GET" action="" class="flex flex-wrap gap-4 mb-4 justify-center pt-5">
+    <div>
+      <label for="sort" class="font-bold">Sort by:</label>
+      <select name="sort" id="sort" class="border p-2 rounded">
+        <option value="-order_date" {% if sort_by == "-order_date" %}selected{% endif %}>Newest</option>
+        <option value="order_date" {% if sort_by == "order_date" %}selected{% endif %}>Oldest</option>
+        <option value="-total_price" {% if sort_by == "-total_price" %}selected{% endif %}>Highest Price</option>
+        <option value="total_price" {% if sort_by == "total_price" %}selected{% endif %}>Lowest Price</option>
+      </select>
+    </div>
+    <div>
+      <label for="status" class="font-bold">Filter by Status:</label>
+      <select name="status" id="status" class="border p-2 rounded">
+        <option value="">All Orders</option>
+        <option value="pending" {% if filter_status == "pending" %}selected{% endif %}>Pending</option>
+        <option value="processing" {% if filter_status == "processing" %}selected{% endif %}>Processing</option>
+        <option value="completed" {% if filter_status == "completed" %}selected{% endif %}>Completed</option>
+        <option value="cancelled" {% if filter_status == "cancelled" %}selected{% endif %}>Cancelled</option>
+        <option value="refunded" {% if filter_status == "refunded" %}selected{% endif %}>Refunded</option>
+        <option value="failed" {% if filter_status == "failed" %}selected{% endif %}>Failed</option>
+        <option value="on-hold" {% if filter_status == "on-hold" %}selected{% endif %}>On Hold</option>
+      </select>
+    </div>
+    <div>
+      <label for="rv_status" class="font-bold">RV Order Status:</label>
+      <select name="rv_status" id="rv_status" class="border p-2 rounded">
+        <option value="">All RV Orders</option>
+        <option value="final" {% if rv_status == "final" %}selected{% endif %}>Final</option>
+        <option value="closed" {% if rv_status == "closed" %}selected{% endif %}>Closed</option>
+      </select>
+    </div>
+    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">🔍 Filter</button>
+  </form>
+  <div class="divider divider-start">📦 Order List</div>
+  <!-- Orders Table -->
+   
+  <div class="overflow-x-auto">
+    <table class="table table-zebra w-full">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer Name</th>
+          <th>Total Price</th>
+          <th>Order Date</th>
+          <th>Woo Status</th>
+          <th>Synced with RV</th>
+          <th>RV Order Status</th>
+          <th>RV Cancelled</th>
+          <th>Last Synced</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr class="clickable-row"
+            hx-get="{% url 'order_detail' order.order_id %}"
+            hx-target="#orderDetailModalContent"
+            hx-trigger="click">
+          <td>{{ order.order_id }}</td>
+          <td>{{ order.customer_name }}</td>
+          <td>€{{ order.total_price }}</td>
+          <td>{{ order.order_date|date:"F d, Y" }}</td>
+          <td>{{ order.status }}</td>
+          <td class="text-center">{% if order.is_synced_with_rv %}✅{% else %}❌{% endif %}</td>
+          <td class="text-center">{{ order.rv_order_status|default:"-" }}</td>
+          <td class="text-center">{{ order.rv_canceled|default:"-" }}</td>
+          <td class="text-center">{{ order.rv_last_synced|date:"F d, Y H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center p-4">No orders found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      
+    </table>
+  </div>
+</div>
+
+<!-- Order Detail Modal -->
+<dialog id="orderDetailModal" class="modal">
+    <div class="modal-box">
+      <h3 id="orderDetailModalTitle" class="text-xl font-bold">Order Detail</h3>
+      <div id="orderDetailModalContent" class="py-4">
+        {% include "includes/order_status.html" %}
+      </div>
+      <div class="modal-action">
+        <form method="dialog">
+          <button class="btn">Close</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+<!-- Sync Log Modal -->
+<dialog id="syncLogModal" class="modal">
+  <div class="modal-box w-11/12 max-w-5xl">
+    <h3 class="text-xl font-bold">📜 Sync Logs</h3>
+    <div id="sync-log-content" hx-get="/scraper/view-sync-log/" hx-trigger="revealed" hx-target="#sync-log-content" class="py-4 overflow-auto max-h-96">
+      <p>Loading logs...</p>
+    </div>
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn">Close</button>
+      </form>
+    </div>
+  </div>
+</dialog>
+
+{% if messages %}
+  {% for message in messages %}
+    <div role="alert" class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}">
+      <span>{{ message }}</span>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<script>
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+      // If the swap target is the modal content container, open the modal
+      if (event.detail.target.id === 'orderDetailModalContent') {
+        document.getElementById('orderDetailModal').showModal();
+      }
+    });
+  </script>
+
+<script src="{% static 'js/order_list.js' %}"></script>
+{% endblock %}

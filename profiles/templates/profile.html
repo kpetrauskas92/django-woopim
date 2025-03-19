@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-3xl font-bold mb-4">👤 My Profile</h1>
+
+    <div class="flex items-center space-x-6">
+        {% if profile.profile_picture %}
+            <img src="{{ profile.profile_picture.url }}" alt="Profile Picture" class="w-32 h-32 rounded-full">
+        {% else %}
+            <div class="w-32 h-32 bg-gray-300 rounded-full flex items-center justify-center">
+                📷
+            </div>
+        {% endif %}
+
+        <div>
+            <p><strong>Username:</strong> {{ profile.user.username }}</p>
+            <p><strong>Email:</strong> {{ profile.user.email }}</p>
+            <p><strong>Role:</strong> {{ profile.role }}</p>
+            <p><strong>Joined:</strong> {{ profile.created_at|date:"F d, Y" }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

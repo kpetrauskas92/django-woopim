@@ -1,52 +1,174 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product List</title>
-</head>
-<body>
-    <h1>WooCommerce Product List</h1>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Image</th>
-                <th>ID</th>
-                <th>SKU</th>
-                <th>Name</th>
-                <th>Full Price</th>
-                <th>Sale Price</th>
-                <th>Discount %</th>
-                <th>Status</th>
-                <th>Special Offer</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for product in products %}
-            <tr>
-                <td><img src="{{ product.image_url }}" width="50"></td>
-                <td>{{ product.woo_id }}</td>
-                <td>{% if product.product_type == "variable" %}Variable{% else %}{{ product.sku }}{% endif %}</td>
-                <td>{{ product.name }}</td>
-                <td>€{{ product.full_price }}</td>
-                <td>€{{ product.sale_price }}</td>
-                <td>
-                    {% if product.discount_percentage %}
-                        {{ product.discount_percentage }}%
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>{{ product.stock_quantity }}</td>
-                <td>{{ product.status }}</td>
-                <td>{% if product.special_offers %}✅{% else %}❌{% endif %}</td>
-                <td>
-                    <a href="{% url 'product_detail' product.woo_id %}">🔍 Details</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</body>
-</html>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}WooCommerce Product List{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-6 bg-white shadow-lg rounded-lg">
+    <h1 class="text-3xl font-bold text-center mb-6">🛒 WooCommerce Product List</h1>
+
+    <!-- 🔍 Search & Filter Form -->
+    <form method="GET" action="" class="bg-gray-100 p-4 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Search Bar -->
+        <div>
+            <label for="search" class="block text-sm font-medium text-gray-700">🔍 Search:</label>
+            <input type="text" id="search" name="search" placeholder="Search by name, SKU, or ID"
+                value="{{ request.GET.search }}"
+                class="w-full p-2 border border-gray-300 rounded-lg">
+        </div>
+
+        <!-- Stock Status Filter -->
+        <div>
+            <label for="stock_status" class="block text-sm font-medium text-gray-700">📦 Stock Status:</label>
+            <select name="stock_status" id="stock_status" class="w-full p-2 border border-gray-300 rounded-lg">
+                <option value="">All Stock Status</option>
+                <option value="instock" {% if request.GET.stock_status == 'instock' %}selected{% endif %}>In Stock</option>
+                <option value="outofstock" {% if request.GET.stock_status == 'outofstock' %}selected{% endif %}>Out of Stock</option>
+            </select>
+        </div>
+
+        <!-- Product Status Filter -->
+        <div>
+            <label for="product_status" class="block text-sm font-medium text-gray-700">📄 Product Status:</label>
+            <select name="product_status" id="product_status" class="w-full p-2 border border-gray-300 rounded-lg">
+                <option value="">All Product Status</option>
+                <option value="publish" {% if request.GET.product_status == 'publish' %}selected{% endif %}>Published</option>
+                <option value="private" {% if request.GET.product_status == 'private' %}selected{% endif %}>Private</option>
+            </select>
+        </div>
+
+        <!-- Special Offer Filter -->
+        <div>
+            <label for="special_offers" class="block text-sm font-medium text-gray-700">🏷️ Special Offers:</label>
+            <select name="special_offers" id="special_offers" class="w-full p-2 border border-gray-300 rounded-lg">
+                <option value="">All Special Offers</option>
+                <option value="yes" {% if request.GET.special_offers == 'yes' %}selected{% endif %}>Yes</option>
+                <option value="no" {% if request.GET.special_offers == 'no' %}selected{% endif %}>No</option>
+            </select>
+        </div>
+
+        <!-- Category Filter -->
+        <div>
+            <label for="category" class="block text-sm font-medium text-gray-700">📂 Category:</label>
+            <select name="category" id="category" class="w-full p-2 border border-gray-300 rounded-lg">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                    <option value="{{ category }}" {% if request.GET.category == category %}selected{% endif %}>
+                        {{ category }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Filter & Reset Buttons -->
+        <div class="flex items-end gap-2">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                🔍 Filter
+            </button>
+            <a href="{% url 'product_list' %}" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+                🔄 Reset
+            </a>
+        </div>
+    </form>
+
+    <!-- 🛒 Product Table -->
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow">
+            <thead>
+                <tr class="bg-blue-600 text-white">
+                    <th class="p-3">Image</th>
+                    <th class="p-3">ID</th>
+                    <th class="p-3">SKU</th>
+                    <th class="p-3">Name</th>
+                    <th class="p-3">Full Price</th>
+                    <th class="p-3">Sale Price</th>
+                    <th class="p-3">Discount %</th>
+                    <th class="p-3">Stock</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Special Offer</th>
+                    <th class="p-3">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for product in products %}
+                <tr class="border-b">
+                    <!-- Product Image -->
+                    <td class="p-3 text-center">
+                        {% if product.image_url %}
+                            <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-12 h-12 rounded-md">
+                        {% else %}
+                            No Image
+                        {% endif %}
+                    </td>
+
+                    <!-- Product Details -->
+                    <td class="p-3">{{ product.woo_id }}</td>
+                    <td class="p-3">{{ product.sku|default:"-" }}</td>
+                    <td class="p-3">{{ product.name }}</td>
+                    <td class="p-3">€{{ product.full_price|default:"0.00" }}</td>
+                    <td class="p-3">
+                        {% if product.sale_price %}
+                            €{{ product.sale_price }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="p-3">
+                        {% if product.discount_percentage %}
+                            {{ product.discount_percentage }}%
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+
+                    <!-- Stock Quantity -->
+                    <td class="p-3">
+                        {% if product.product_type == "variable" %}
+                            Multiple (Check Details)
+                        {% else %}
+                            {{ product.stock_quantity|default:"-" }}
+                        {% endif %}
+                    </td>
+
+                    <!-- Stock Status -->
+                    <td class="p-3">
+                        {% if product.stock_status == "instock" %}
+                            <span class="text-green-600">✅ In Stock</span>
+                        {% elif product.stock_status == "outofstock" %}
+                            <span class="text-red-600">❌ Out of Stock</span>
+                        {% else %}
+                            <span class="text-yellow-600">🔄 On Backorder</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Special Offers -->
+                    <td class="p-3">
+                        {% if product.special_offers %}
+                            🏷️ Yes
+                        {% else %}
+                            ❌ No
+                        {% endif %}
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="p-3 text-center">
+                        <a href="{% url 'product_detail' product.woo_id %}" 
+                           class="text-blue-600 hover:underline">
+                            🔍 Details
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="11" class="p-4 text-center text-gray-600">
+                        No products found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

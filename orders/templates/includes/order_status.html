@@ -1,0 +1,23 @@
+{% if order %}
+  <div id="orderDetailModalContent">
+      {% if message %}
+          <div class="alert alert-success">{{ message }}</div>
+      {% endif %}
+      
+      {% if order.status != "completed" %}
+          <form hx-post="{% url 'mark_order_complete' order.order_id %}" 
+                hx-target="#orderDetailModalContent" 
+                hx-swap="outerHTML"
+                method="post">
+              {% csrf_token %}
+              <button type="submit" class="bg-green-500 text-white py-2 px-4 rounded cursor-pointer">
+                  Mark as Complete
+              </button>
+          </form>
+      {% else %}
+          <p>Order is completed.</p>
+      {% endif %}
+  </div>
+{% else %}
+  <p>Please select an order from the list to view details.</p>
+{% endif %}

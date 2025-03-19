@@ -1,0 +1,49 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}WooCommerce Dashboard{% endblock %}</title>
+    <link href="{% static 'css/output.css' %}" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+</head>
+
+<!-- 🟢 Body with Flex for Sticky Footer -->
+<body class="bg-gray-100 font-sans leading-normal tracking-normal min-h-screen flex flex-col">
+
+    <!-- 🔹 Navbar -->
+    <nav class="bg-blue-600 p-4 text-white shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="{% url 'dashboard' %}" class="text-2xl font-bold">🏠 WooCommerce Dashboard</a>
+
+            <ul class="flex space-x-4">
+                <li><a href="{% url 'dashboard' %}" class="hover:underline">📊 Dashboard</a></li>
+                <li><a href="{% url 'order_list' %}" class="hover:underline">📦 Orders</a></li>
+                <li><a href="{% url 'product_list' %}" class="hover:underline">🛒 Products</a></li>
+
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'profile' %}" class="hover:underline">👤 Profile</a></li>
+                    <li><a href="{% url 'account_logout' %}" class="hover:underline">🚪 Logout</a></li>
+                {% else %}
+                    <li><a href="{% url 'account_login' %}" class="hover:underline">🔐 Login</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 🔹 Main Content (Pushes Footer Down) -->
+    <main class="flex-grow container mx-auto p-6">
+        {% block content %}
+        <!-- Page-specific content will be inserted here -->
+        {% endblock %}
+    </main>
+
+    <!-- 🔹 Footer (Always at Bottom) -->
+    <footer class="bg-gray-800 text-white text-center p-4">
+        &copy; 2025 PIM - WOO | Built by Karolis Petrauskas
+    </footer>
+
+</body>
+</html>
