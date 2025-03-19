@@ -28,22 +28,26 @@ def setup_driver():
 
     if is_production:
         print("🌍 Running in PRODUCTION mode...")
-        options.binary_location = "/opt/render/project/.render/chrome/opt/google/chrome/google-chrome"  # ✅ Corrected path
-        options.add_argument("--headless=new")  # ✅ More stable headless mode
-        options.add_argument("--no-sandbox")  # Required for running in a container
-        options.add_argument("--disable-dev-shm-usage")  # Avoid shared memory issues
-        options.add_argument("--disable-gpu")  # Not needed for headless mode
-        options.add_argument("--disable-blink-features=AutomationControlled")  # Avoid detection
-        options.add_argument("--remote-debugging-port=9222")  # Debugging option
+        options.binary_location = "/opt/render/project/.render/chrome/opt/google/chrome/google-chrome"
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--disable-blink-features=AutomationControlled")
 
-        # Use the correct ChromeDriver path in Render
+        # ✅ Set ChromeDriver Path & Debug if it exists
         driver_path = "/opt/render/project/.render/chromedriver"
+        if not os.path.exists(driver_path):
+            print(f"❌ ChromeDriver not found at {driver_path}! Checking installation...")
+            raise FileNotFoundError(f"❌ ChromeDriver missing! Make sure it is installed at {driver_path}")
+
+        print(f"✅ ChromeDriver found at {driver_path}, launching Chrome...")
+
         driver = webdriver.Chrome(service=Service(driver_path), options=options)
 
     else:
         print("💻 Running in DEVELOPMENT mode...")
-        # Use ChromeDriverManager for local development
-        options.add_argument("--headless=new")  # ✅ Use `new` for compatibility
+        options.add_argument("--headless=new")
         options.add_argument("--disable-blink-features=AutomationControlled")
 
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
