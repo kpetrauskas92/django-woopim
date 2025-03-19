@@ -37,8 +37,9 @@ def setup_driver():
 
         # ✅ Set ChromeDriver Path & Debug if it exists
         driver_path = "/opt/render/project/.render/chromedriver"
+
         if not os.path.exists(driver_path):
-            print(f"❌ ChromeDriver not found at {driver_path}! Checking installation...")
+            print(f"❌ ChromeDriver NOT FOUND at {driver_path}! Exiting...")
             raise FileNotFoundError(f"❌ ChromeDriver missing! Make sure it is installed at {driver_path}")
 
         print(f"✅ ChromeDriver found at {driver_path}, launching Chrome...")
