@@ -29,21 +29,22 @@ def setup_driver():
 
     if is_production:
         print("🌍 Running in PRODUCTION mode...")
-        options.binary_location = "/usr/bin/google-chrome"  # Set custom Chrome binary path
+        options.binary_location = "/opt/render/chrome/opt/google/chrome/google-chrome"  # Correct Chrome binary path
         options.add_argument("--headless")  # Run in headless mode
-        options.add_argument("--no-sandbox")  # Required for running as root in Render
+        options.add_argument("--no-sandbox")  # Required for running in a container
         options.add_argument("--disable-dev-shm-usage")  # Avoid shared memory issues
         options.add_argument("--disable-gpu")  # Not needed for headless mode
         options.add_argument("--disable-blink-features=AutomationControlled")  # Avoid detection
+        options.add_argument("--remote-debugging-port=9222")  # Debugging option
 
         # Use the correct ChromeDriver path in Render
-        driver_path = "/usr/bin/chromedriver"
+        driver_path = "/opt/render/chrome/chromedriver"
         driver = webdriver.Chrome(service=Service(driver_path), options=options)
 
     else:
         print("💻 Running in DEVELOPMENT mode...")
         # Use ChromeDriverManager for local development
-        # options.add_argument("--start-maximized")  # Keep browser visible
+        # options.add_argument("--start-maximized")  # Keep browser visible in local
         options.add_argument("--headless")  # Run headless if needed
         options.add_argument("--disable-blink-features=AutomationControlled")
 
