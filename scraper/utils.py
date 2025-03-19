@@ -22,15 +22,14 @@ COMPANY_NUMBER = os.getenv("RETAIL_VISTA_COMPANY_NUMBER")
 def setup_driver():
     print("🚀 Setting up Selenium WebDriver...")
 
-    # Check if running in production (Render) using an environment variable
     is_production = os.getenv("RENDER", "False") == "True"
 
     options = webdriver.ChromeOptions()
 
     if is_production:
         print("🌍 Running in PRODUCTION mode...")
-        options.binary_location = "/opt/render/chrome/opt/google/chrome/google-chrome"  # Correct Chrome binary path
-        options.add_argument("--headless")  # Run in headless mode
+        options.binary_location = "/opt/render/project/.render/chrome/opt/google/chrome/google-chrome"  # ✅ Corrected path
+        options.add_argument("--headless=new")  # ✅ More stable headless mode
         options.add_argument("--no-sandbox")  # Required for running in a container
         options.add_argument("--disable-dev-shm-usage")  # Avoid shared memory issues
         options.add_argument("--disable-gpu")  # Not needed for headless mode
@@ -38,14 +37,13 @@ def setup_driver():
         options.add_argument("--remote-debugging-port=9222")  # Debugging option
 
         # Use the correct ChromeDriver path in Render
-        driver_path = "/opt/render/chrome/chromedriver"
+        driver_path = "/opt/render/project/.render/chromedriver"
         driver = webdriver.Chrome(service=Service(driver_path), options=options)
 
     else:
         print("💻 Running in DEVELOPMENT mode...")
         # Use ChromeDriverManager for local development
-        # options.add_argument("--start-maximized")  # Keep browser visible in local
-        options.add_argument("--headless")  # Run headless if needed
+        options.add_argument("--headless=new")  # ✅ Use `new` for compatibility
         options.add_argument("--disable-blink-features=AutomationControlled")
 
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
