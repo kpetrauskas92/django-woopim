@@ -26,8 +26,8 @@ def setup_driver():
     is_heroku = "DYNO" in os.environ  # Check if running on Heroku
     options = webdriver.ChromeOptions()
 
-    # ✅ Performance & Stability Flags
-    options.add_argument("--headless=new")  # New headless mode
+    # ✅ Stability Flags to Prevent Crashes
+    options.add_argument("--headless=new")  # Use the latest headless mode
     options.add_argument("--no-sandbox")  
     options.add_argument("--disable-dev-shm-usage")  
     options.add_argument("--disable-gpu")  
@@ -43,6 +43,8 @@ def setup_driver():
     options.add_argument("--disable-default-apps")  
     options.add_argument("--no-first-run")  
     options.add_argument("--single-process")  
+    options.add_argument("--disable-crash-reporter")  # Prevents Chrome from closing unexpectedly
+    options.add_argument("--disable-hang-monitor")  # Prevents Chrome from being killed due to long script execution
 
     if is_heroku:
         print("🌍 Running in HEROKU production mode...")
