@@ -7,7 +7,6 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import WebDriverException
 from orders.models import Order, RetailVistaOrder  # Import models
 from dotenv import load_dotenv
@@ -27,35 +26,46 @@ def setup_driver():
     is_heroku = "DYNO" in os.environ  # Check if running on Heroku
     options = webdriver.ChromeOptions()
 
-    # ✅ Common Performance & Stability Flags
-    options.add_argument("--headless=new")  # New headless mode for stability
-    options.add_argument("--no-sandbox")  # Required for running in cloud environments
-    options.add_argument("--disable-dev-shm-usage")  # Prevents shared memory issues
-    options.add_argument("--disable-gpu")  # Prevents GPU acceleration issues
-    options.add_argument("--disable-blink-features=AutomationControlled")  # Reduces bot detection
-    options.add_argument("--disable-software-rasterizer")  # Saves CPU load
-    options.add_argument("--disable-extensions")  # Reduces memory usage
-    options.add_argument("--disable-popup-blocking")  # Avoids memory-intensive popups
-    options.add_argument("--disable-background-networking")  # Reduces network footprint
-    options.add_argument("--disable-sync")  # Avoids extra sync processes
-    options.add_argument("--disable-translate")  # Disables translation
-    options.add_argument("--metrics-recording-only")  # Reduces memory logging
-    options.add_argument("--mute-audio")  # Mutes audio playback in Chrome
-    options.add_argument("--disable-default-apps")  # Prevents default app loading
-    options.add_argument("--no-first-run")  # Speeds up startup
-    options.add_argument("--single-process")  # Reduces memory overhead (useful for limited RAM)
+    # ✅ Performance & Stability Flags
+    options.add_argument("--headless=new")  # New headless mode
+    options.add_argument("--no-sandbox")  
+    options.add_argument("--disable-dev-shm-usage")  
+    options.add_argument("--disable-gpu")  
+    options.add_argument("--disable-blink-features=AutomationControlled")  
+    options.add_argument("--disable-software-rasterizer")  
+    options.add_argument("--disable-extensions")  
+    options.add_argument("--disable-popup-blocking")  
+    options.add_argument("--disable-background-networking")  
+    options.add_argument("--disable-sync")  
+    options.add_argument("--disable-translate")  
+    options.add_argument("--metrics-recording-only")  
+    options.add_argument("--mute-audio")  
+    options.add_argument("--disable-default-apps")  
+    options.add_argument("--no-first-run")  
+    options.add_argument("--single-process")  
 
     if is_heroku:
         print("🌍 Running in HEROKU production mode...")
 
-        # ✅ Set correct paths (from Heroku's build logs)
-        options.binary_location = "/tmp/buildpacks/.chrome-for-testing/chrome-linux64/chrome"
-        driver_path = "/tmp/buildpacks/.chrome-for-testing/chromedriver-linux64/chromedriver"
+        # ✅ Correct Chrome & ChromeDriver paths
+        chrome_binary = "/app/.chrome-for-testing/chrome-linux64/chrome"
+        chromedriver_binary = "/app/.chrome-for-testing/chromedriver-linux64/chromedriver"
+
+        # ✅ Verify Chrome binary exists
+        if not os.path.exists(chrome_binary):
+            raise FileNotFoundError(f"🚨 Chrome binary not found at {chrome_binary}")
+
+        # ✅ Verify ChromeDriver binary exists
+        if not os.path.exists(chromedriver_binary):
+            raise FileNotFoundError(f"🚨 ChromeDriver binary not found at {chromedriver_binary}")
+
+        # ✅ Set Chrome binary location
+        options.binary_location = chrome_binary
 
         # ✅ Ensure ChromeDriver has execute permissions
-        if not os.access(driver_path, os.X_OK):
-            print(f"⚠️ ChromeDriver at {driver_path} lacks execute permissions. Fixing...")
-            os.chmod(driver_path, 0o755)
+        if not os.access(chromedriver_binary, os.X_OK):
+            print(f"⚠️ ChromeDriver at {chromedriver_binary} lacks execute permissions. Fixing...")
+            os.chmod(chromedriver_binary, 0o755)
 
         # ✅ Kill any lingering Chrome processes
         print("🛑 Killing any existing Chrome or ChromeDriver processes...")
@@ -66,8 +76,8 @@ def setup_driver():
         retries = 3
         for attempt in range(retries):
             try:
-                print(f"🔄 Attempt {attempt + 1}: Launching ChromeDriver at {driver_path}...")
-                driver = webdriver.Chrome(service=Service(driver_path), options=options)
+                print(f"🔄 Attempt {attempt + 1}: Launching ChromeDriver at {chromedriver_binary}...")
+                driver = webdriver.Chrome(service=Service(chromedriver_binary), options=options)
                 print("✅ ChromeDriver launched successfully!")
                 return driver
             except WebDriverException as e:
