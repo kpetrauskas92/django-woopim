@@ -23,28 +23,65 @@ def setup_driver():
     print("🚀 Setting up Selenium WebDriver...")
 
     is_production = os.getenv("RENDER", "false").lower() == "true"
-
     options = webdriver.ChromeOptions()
+
+    # ✅ Common Performance & Memory-Saving Flags
+    options.add_argument("--headless=new")  # Use new headless mode
+    options.add_argument("--no-sandbox")  # Bypass sandbox (required for cloud)
+    options.add_argument("--disable-dev-shm-usage")  # Prevents shared memory issues
+    options.add_argument("--disable-gpu")  # Prevents GPU acceleration issues
+    options.add_argument("--disable-blink-features=AutomationControlled")  # Reduces detection
+    options.add_argument("--disable-software-rasterizer")  # Saves CPU load
+    options.add_argument("--disable-extensions")  # Saves memory by disabling extensions
+    options.add_argument("--disable-popup-blocking")  # Avoids memory-intensive popups
+    options.add_argument("--disable-background-networking")  # Reduces network footprint
+    options.add_argument("--disable-sync")  # Avoids extra sync processes
+    options.add_argument("--disable-translate")  # Disables translation
+    options.add_argument("--metrics-recording-only")  # Reduces memory logging
+    options.add_argument("--mute-audio")  # Mutes audio playback in Chrome
+    options.add_argument("--disable-default-apps")  # Prevents default app loading
+    options.add_argument("--no-first-run")  # Speeds up startup
+    options.add_argument("--single-process")  # Reduces memory overhead (useful for limited RAM)
 
     if is_production:
         print("🌍 Running in PRODUCTION mode...")
-        options.binary_location = "/opt/render/project/.render/chrome/opt/google/chrome/google-chrome"
-        options.add_argument("--headless=new")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--disable-blink-features=AutomationControlled")
+        
+        # ✅ Verify Chrome Binary
+        chrome_binary = "/opt/render/project/.render/chrome/opt/google/chrome/google-chrome"
+        if not os.path.exists(chrome_binary):
+            raise FileNotFoundError(f"❌ Chrome binary NOT found at {chrome_binary}! Exiting...")
+        options.binary_location = chrome_binary
 
-        # ✅ Set ChromeDriver Path & Debug if it exists
+        # ✅ Verify ChromeDriver Path
         driver_path = "/opt/render/project/.render/chromedriver"
-
         if not os.path.exists(driver_path):
-            print(f"❌ ChromeDriver NOT FOUND at {driver_path}! Exiting...")
-            raise FileNotFoundError(f"❌ ChromeDriver missing! Make sure it is installed at {driver_path}")
+            raise FileNotFoundError(f"❌ ChromeDriver missing at {driver_path}! Ensure it's correctly installed.")
 
-        print(f"✅ ChromeDriver found at {driver_path}, launching Chrome...")
+        # ✅ Ensure ChromeDriver has execute permissions
+        if not os.access(driver_path, os.X_OK):
+            print(f"⚠️ ChromeDriver at {driver_path} lacks execute permissions. Fixing...")
+            os.chmod(driver_path, 0o755)
 
-        driver = webdriver.Chrome(service=Service(driver_path), options=options)
+        # ✅ Kill any lingering Chrome processes
+        print("🛑 Killing any existing Chrome or ChromeDriver processes...")
+        os.system("pkill -f chrome || true")  # Kill any running Chrome
+        os.system("pkill -f chromedriver || true")  # Kill any running ChromeDriver
+
+        # ✅ Launch ChromeDriver with retry mechanism
+        retries = 3
+        for attempt in range(retries):
+            try:
+                print(f"🔄 Attempt {attempt + 1}: Launching ChromeDriver at {driver_path}...")
+                driver = webdriver.Chrome(service=Service(driver_path), options=options)
+                print("✅ ChromeDriver launched successfully!")
+                return driver
+            except Exception as e:
+                print(f"❌ Failed to launch ChromeDriver: {e}")
+                if attempt < retries - 1:
+                    print("⏳ Retrying in 3 seconds...")
+                    time.sleep(3)
+                else:
+                    raise RuntimeError("🚨 ChromeDriver failed to start after multiple attempts!")
 
     else:
         print("💻 Running in DEVELOPMENT mode...")
