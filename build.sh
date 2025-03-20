@@ -67,31 +67,36 @@ if [[ ! -f $CHROMEDRIVER_PATH ]]; then
   MAJOR_VERSION=$(echo "$CHROME_VERSION" | cut -d. -f1)
   echo "Extracted Chrome major version: $MAJOR_VERSION"
   
-  # Find latest compatible ChromeDriver version using version-specific endpoint
-  CHROMEDRIVER_VERSION=$(wget -qO- "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$MAJOR_VERSION" || true)
-  echo "ChromeDriver version from version-specific endpoint: '$CHROMEDRIVER_VERSION'"
-  
-  # Fallback to latest release if version-specific endpoint returns empty
-  if [[ -z "$CHROMEDRIVER_VERSION" ]]; then
-    echo "⚠️ ChromeDriver version for Chrome major version $MAJOR_VERSION not found. Trying fallback to latest release."
-    CHROMEDRIVER_VERSION=$(wget -qO- "https://chromedriver.storage.googleapis.com/LATEST_RELEASE" || true)
-    echo "ChromeDriver version from fallback endpoint: '$CHROMEDRIVER_VERSION'"
+  if [[ "$MAJOR_VERSION" -eq 134 ]]; then
+    echo "Detected Chrome major version 134. Using stable ChromeDriver for testing."
+    CHROMEDRIVER_VERSION="134.0.6998.90"
+    DRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip"
+  else
+    # Find latest compatible ChromeDriver version using version-specific endpoint
+    CHROMEDRIVER_VERSION=$(wget -qO- "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$MAJOR_VERSION" || true)
+    echo "ChromeDriver version from version-specific endpoint: '$CHROMEDRIVER_VERSION'"
+    
+    # Fallback to latest release if version-specific endpoint returns empty
+    if [[ -z "$CHROMEDRIVER_VERSION" ]]; then
+      echo "⚠️ ChromeDriver version for Chrome major version $MAJOR_VERSION not found. Trying fallback to latest release."
+      CHROMEDRIVER_VERSION=$(wget -qO- "https://chromedriver.storage.googleapis.com/LATEST_RELEASE" || true)
+      echo "ChromeDriver version from fallback endpoint: '$CHROMEDRIVER_VERSION'"
+    fi
+    
+    if [[ -z "$CHROMEDRIVER_VERSION" ]]; then
+      echo "❌ Failed to retrieve a ChromeDriver version. Exiting..."
+      exit 1
+    fi
+    
+    DRIVER_URL="https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip"
   fi
 
-  if [[ -z "$CHROMEDRIVER_VERSION" ]]; then
-    echo "❌ Failed to retrieve a ChromeDriver version. Exiting..."
-    exit 1
-  fi
-
-  # Download ChromeDriver
-  DRIVER_URL="https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip"
   echo "Downloading ChromeDriver from $DRIVER_URL"
   if ! wget -q -L --tries=3 "$DRIVER_URL" -O chromedriver.zip; then
     echo "❌ Failed to download ChromeDriver from $DRIVER_URL. Exiting..."
     exit 1
   fi
 
-  # Validate the downloaded zip file
   echo "Verifying ChromeDriver zip file integrity..."
   if ! unzip -t chromedriver.zip >/dev/null 2>&1; then
     echo "❌ ChromeDriver package appears to be corrupted. Exiting..."

@@ -21,7 +21,9 @@ COMPANY_NUMBER = os.getenv("RETAIL_VISTA_COMPANY_NUMBER")
 
 def setup_driver():
     print("🚀 Setting up Selenium WebDriver...")
+
     is_production = os.getenv("RENDER", "false").lower() == "true"
+
     options = webdriver.ChromeOptions()
 
     if is_production:
@@ -32,19 +34,26 @@ def setup_driver():
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--disable-blink-features=AutomationControlled")
-        
-        # Use webdriver_manager to auto-install a matching driver
-        from webdriver_manager.chrome import ChromeDriverManager
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+        # ✅ Set ChromeDriver Path & Debug if it exists
+        driver_path = "/opt/render/project/.render/chromedriver"
+
+        if not os.path.exists(driver_path):
+            print(f"❌ ChromeDriver NOT FOUND at {driver_path}! Exiting...")
+            raise FileNotFoundError(f"❌ ChromeDriver missing! Make sure it is installed at {driver_path}")
+
+        print(f"✅ ChromeDriver found at {driver_path}, launching Chrome...")
+
+        driver = webdriver.Chrome(service=Service(driver_path), options=options)
+
     else:
         print("💻 Running in DEVELOPMENT mode...")
         options.add_argument("--headless=new")
         options.add_argument("--disable-blink-features=AutomationControlled")
-        from webdriver_manager.chrome import ChromeDriverManager
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-        
-    return driver
 
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+    return driver
 
 # 🔑 Login Function
 def login_to_retail_vista(driver):
