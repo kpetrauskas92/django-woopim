@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.common.exceptions import WebDriverException
 from orders.models import Order, RetailVistaOrder  # Import models
 from dotenv import load_dotenv
 
@@ -19,12 +20,24 @@ PASSWORD = os.getenv("RETAIL_VISTA_PASSWORD")
 COMPANY_NUMBER = os.getenv("RETAIL_VISTA_COMPANY_NUMBER")
 
 
+def install_chrome():
+    """ Installs Chrome and ChromeDriver dynamically in Heroku Dyno. """
+    print("🚀 Installing Chrome and ChromeDriver...")
+
+    CHROME_URL = "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
+    CHROMEDRIVER_URL = "https://storage.googleapis.com/chrome-for-testing-public/134.0.6998.90/linux64/chromedriver-linux64.zip"
+
+    os.system(f"wget {CHROME_URL} -O chrome.deb && sudo dpkg -i chrome.deb && rm chrome.deb")
+    
+    os.system(f"wget {CHROMEDRIVER_URL} -O chromedriver.zip && unzip chromedriver.zip -d /app/.chromedriver && rm chromedriver.zip")
+    os.system("chmod +x /app/.chromedriver/chromedriver")
+
 def setup_driver():
     print("🚀 Setting up Selenium WebDriver...")
-
-    is_production = os.getenv("RENDER", "false").lower() == "true"
+    is_heroku = "DYNO" in os.environ  # Check if running on Heroku
+    
     options = webdriver.ChromeOptions()
-
+    
     # ✅ Common Performance & Memory-Saving Flags
     options.add_argument("--headless=new")  # Use new headless mode
     options.add_argument("--no-sandbox")  # Bypass sandbox (required for cloud)
@@ -43,19 +56,15 @@ def setup_driver():
     options.add_argument("--no-first-run")  # Speeds up startup
     options.add_argument("--single-process")  # Reduces memory overhead (useful for limited RAM)
 
-    if is_production:
-        print("🌍 Running in PRODUCTION mode...")
-        
-        # ✅ Verify Chrome Binary
-        chrome_binary = "/opt/render/project/.render/chrome/opt/google/chrome/google-chrome"
-        if not os.path.exists(chrome_binary):
-            raise FileNotFoundError(f"❌ Chrome binary NOT found at {chrome_binary}! Exiting...")
-        options.binary_location = chrome_binary
+    if is_heroku:
+        print("🌍 Running in HEROKU production mode...")
 
-        # ✅ Verify ChromeDriver Path
-        driver_path = "/opt/render/project/.render/chromedriver"
-        if not os.path.exists(driver_path):
-            raise FileNotFoundError(f"❌ ChromeDriver missing at {driver_path}! Ensure it's correctly installed.")
+        # ✅ Install Chrome and ChromeDriver (if not already installed)
+        install_chrome()
+        
+        # ✅ Set correct paths
+        options.binary_location = "/usr/bin/google-chrome"
+        driver_path = "/app/.chromedriver/chromedriver"
 
         # ✅ Ensure ChromeDriver has execute permissions
         if not os.access(driver_path, os.X_OK):
@@ -67,7 +76,7 @@ def setup_driver():
         os.system("pkill -f chrome || true")  # Kill any running Chrome
         os.system("pkill -f chromedriver || true")  # Kill any running ChromeDriver
 
-        # ✅ Launch ChromeDriver with retry mechanism
+        # ✅ Retry mechanism for ChromeDriver launch
         retries = 3
         for attempt in range(retries):
             try:
@@ -75,7 +84,7 @@ def setup_driver():
                 driver = webdriver.Chrome(service=Service(driver_path), options=options)
                 print("✅ ChromeDriver launched successfully!")
                 return driver
-            except Exception as e:
+            except WebDriverException as e:
                 print(f"❌ Failed to launch ChromeDriver: {e}")
                 if attempt < retries - 1:
                     print("⏳ Retrying in 3 seconds...")
