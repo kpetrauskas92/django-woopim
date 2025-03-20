@@ -40,7 +40,7 @@ RETAIL_VISTA_PASSWORD = os.getenv("RETAIL_VISTA_PASSWORD")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost,django-woopim.onrender.com").split(",")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost,woo-pim-d6c76eae1caf.herokuapp.com").split(",")
 
 
 
