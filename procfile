@@ -1,2 +1,2 @@
-web: gunicorn woo_pim.wsgi --log-file - --timeout 120
-release: npm run build:css
+web: npm run build:css && gunicorn woo_pim.wsgi --log-file - --timeout 120
+release: python manage.py collectstatic --noinput
