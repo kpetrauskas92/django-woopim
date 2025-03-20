@@ -45,7 +45,6 @@ if [[ ! -f $CHROMEDRIVER_PATH ]]; then
     exit 1
   fi
 
-  echo "🚀 Downloading ChromeDriver version: $CHROMEDRIVER_VERSION..."
   if ! wget -q -L --tries=3 \
     "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip" \
     -O chromedriver.zip; then
@@ -53,17 +52,9 @@ if [[ ! -f $CHROMEDRIVER_PATH ]]; then
     exit 1
   fi
 
-  echo "📂 Extracting ChromeDriver..."
   unzip -o chromedriver.zip -d $STORAGE_DIR/
   rm chromedriver.zip
   chmod +x $CHROMEDRIVER_PATH
-
-  if [[ -f $CHROMEDRIVER_PATH ]]; then
-    echo "✅ ChromeDriver successfully installed at $CHROMEDRIVER_PATH"
-  else
-    echo "❌ ChromeDriver installation failed!"
-    exit 1
-  fi
 else
   echo "✅ Using cached ChromeDriver..."
 fi

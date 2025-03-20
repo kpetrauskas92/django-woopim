@@ -22,7 +22,7 @@ COMPANY_NUMBER = os.getenv("RETAIL_VISTA_COMPANY_NUMBER")
 def setup_driver():
     print("🚀 Setting up Selenium WebDriver...")
 
-    is_production = os.getenv("RENDER", "False") == "True"
+    is_production = os.getenv("RENDER", "false").lower() == "true"
 
     options = webdriver.ChromeOptions()
 
