@@ -20,32 +20,21 @@ PASSWORD = os.getenv("RETAIL_VISTA_PASSWORD")
 COMPANY_NUMBER = os.getenv("RETAIL_VISTA_COMPANY_NUMBER")
 
 
-def install_chrome():
-    """ Installs Chrome and ChromeDriver dynamically in Heroku Dyno. """
-    print("🚀 Installing Chrome and ChromeDriver...")
-
-    CHROME_URL = "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
-    CHROMEDRIVER_URL = "https://storage.googleapis.com/chrome-for-testing-public/134.0.6998.90/linux64/chromedriver-linux64.zip"
-
-    os.system(f"wget {CHROME_URL} -O chrome.deb && sudo dpkg -i chrome.deb && rm chrome.deb")
-    
-    os.system(f"wget {CHROMEDRIVER_URL} -O chromedriver.zip && unzip chromedriver.zip -d /app/.chromedriver && rm chromedriver.zip")
-    os.system("chmod +x /app/.chromedriver/chromedriver")
-
 def setup_driver():
+    """Sets up Selenium WebDriver for Heroku or local development."""
     print("🚀 Setting up Selenium WebDriver...")
+    
     is_heroku = "DYNO" in os.environ  # Check if running on Heroku
-    
     options = webdriver.ChromeOptions()
-    
-    # ✅ Common Performance & Memory-Saving Flags
-    options.add_argument("--headless=new")  # Use new headless mode
-    options.add_argument("--no-sandbox")  # Bypass sandbox (required for cloud)
+
+    # ✅ Common Performance & Stability Flags
+    options.add_argument("--headless=new")  # New headless mode for stability
+    options.add_argument("--no-sandbox")  # Required for running in cloud environments
     options.add_argument("--disable-dev-shm-usage")  # Prevents shared memory issues
     options.add_argument("--disable-gpu")  # Prevents GPU acceleration issues
-    options.add_argument("--disable-blink-features=AutomationControlled")  # Reduces detection
+    options.add_argument("--disable-blink-features=AutomationControlled")  # Reduces bot detection
     options.add_argument("--disable-software-rasterizer")  # Saves CPU load
-    options.add_argument("--disable-extensions")  # Saves memory by disabling extensions
+    options.add_argument("--disable-extensions")  # Reduces memory usage
     options.add_argument("--disable-popup-blocking")  # Avoids memory-intensive popups
     options.add_argument("--disable-background-networking")  # Reduces network footprint
     options.add_argument("--disable-sync")  # Avoids extra sync processes
@@ -59,12 +48,9 @@ def setup_driver():
     if is_heroku:
         print("🌍 Running in HEROKU production mode...")
 
-        # ✅ Install Chrome and ChromeDriver (if not already installed)
-        install_chrome()
-        
-        # ✅ Set correct paths
-        options.binary_location = "/usr/bin/google-chrome"
-        driver_path = "/app/.chromedriver/chromedriver"
+        # ✅ Set correct paths (from Heroku's build logs)
+        options.binary_location = "/tmp/buildpacks/.chrome-for-testing/chrome-linux64/chrome"
+        driver_path = "/tmp/buildpacks/.chrome-for-testing/chromedriver-linux64/chromedriver"
 
         # ✅ Ensure ChromeDriver has execute permissions
         if not os.access(driver_path, os.X_OK):
@@ -73,8 +59,8 @@ def setup_driver():
 
         # ✅ Kill any lingering Chrome processes
         print("🛑 Killing any existing Chrome or ChromeDriver processes...")
-        os.system("pkill -f chrome || true")  # Kill any running Chrome
-        os.system("pkill -f chromedriver || true")  # Kill any running ChromeDriver
+        os.system("pkill -f chrome || true")
+        os.system("pkill -f chromedriver || true")
 
         # ✅ Retry mechanism for ChromeDriver launch
         retries = 3
@@ -97,6 +83,7 @@ def setup_driver():
         options.add_argument("--headless=new")
         options.add_argument("--disable-blink-features=AutomationControlled")
 
+        from webdriver_manager.chrome import ChromeDriverManager
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     return driver
