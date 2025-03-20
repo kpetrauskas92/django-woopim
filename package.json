@@ -5,5 +5,9 @@
   },
   "devDependencies": {
     "daisyui": "^5.0.0"
+  },
+  "scripts": {
+    "build:css": "npx tailwindcss -i ./static/css/base.css -o ./static/css/output.css --minify",
+    "start": "gunicorn woo_pim.wsgi --log-file - --timeout 120"
   }
 }
