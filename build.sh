@@ -110,6 +110,7 @@ if [[ ! -f $CHROMEDRIVER_PATH ]]; then
   echo "ChromeDriver installed successfully."
 else
   echo "✅ Using cached ChromeDriver..."
+  CHROMEDRIVER_VERSION=$("$CHROMEDRIVER_PATH" --version | awk '{print $2}')
 fi
 
 # Final PATH setup
