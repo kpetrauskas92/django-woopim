@@ -26,7 +26,7 @@ def sync_woocommerce_orders(request):
     new_orders = 0
 
     # ✅ Calculate the date one month ago from today
-    one_month_ago = now() - datetime.timedelta(days=7)
+    one_month_ago = now() - datetime.timedelta(days=1)
     one_month_ago_str = one_month_ago.strftime("%Y-%m-%dT%H:%M:%S")
 
     while True:
