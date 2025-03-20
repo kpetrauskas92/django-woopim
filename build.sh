@@ -21,7 +21,7 @@ if [[ ! -d $CHROME_DIR ]]; then
   echo "🚀 Installing Google Chrome..."
   mkdir -p "$CHROME_DIR"
   cd "$CHROME_DIR" || { echo "❌ Failed to cd into $CHROME_DIR"; exit 1; }
-  
+
   # Download latest stable Chrome
   echo "Downloading Chrome from https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
   if ! wget -q -L --tries=3 "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" -O chrome.deb; then
@@ -35,7 +35,7 @@ if [[ ! -d $CHROME_DIR ]]; then
     echo "❌ Corrupted Chrome package detected. Exiting..."
     exit 1
   fi
-  
+
   echo "Package integrity verified. Extracting Chrome package..."
   dpkg -x chrome.deb .
   rm chrome.deb
@@ -76,12 +76,19 @@ download_chromedriver() {
     echo "❌ ChromeDriver package appears to be corrupted. Exiting..."
     exit 1
   fi
-  
+
   echo "Extracting ChromeDriver zip to $STORAGE_DIR..."
   unzip -o chromedriver.zip -d "$STORAGE_DIR/"
   rm chromedriver.zip
+
+  # ✅ Fix: Move extracted binary to the expected location
+  if [[ -f "$STORAGE_DIR/chromedriver-linux64/chromedriver" ]]; then
+    mv "$STORAGE_DIR/chromedriver-linux64/chromedriver" "$CHROMEDRIVER_PATH"
+    rm -rf "$STORAGE_DIR/chromedriver-linux64"  # Cleanup extracted directory
+  fi
+
   chmod +x "$CHROMEDRIVER_PATH"
-  echo "ChromeDriver installed successfully."
+  echo "✅ ChromeDriver installed successfully at $CHROMEDRIVER_PATH"
 }
 
 # Install (or update) ChromeDriver with version matching
