@@ -10,6 +10,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import WebDriverException
+from django.conf import settings
 from orders.models import Order, RetailVistaOrder  # Import models
 from scraper.utils import login_to_retail_vista, open_saleorder_maintenance, select_saleorder_type
 from dotenv import load_dotenv
@@ -22,27 +23,57 @@ PASSWORD = os.getenv("RETAIL_VISTA_PASSWORD")
 COMPANY_NUMBER = os.getenv("RETAIL_VISTA_COMPANY_NUMBER")
 
 
+# Detect Heroku dyno
+is_heroku = "DYNO" in os.environ
+
+if is_heroku:
+    LOG_FILE = "/tmp/rv_sync.log"
+else:
+    LOG_DIR = os.path.join(settings.BASE_DIR, "logs")
+    os.makedirs(LOG_DIR, exist_ok=True)  # ✅ Ensure it exists only in local dev
+    LOG_FILE = os.path.join(LOG_DIR, "rv_sync.log")
+
+
 class Command(BaseCommand):
-    help = "Sync orders from RetailVista to WooCommerce"
+    help = "Sync RetailVista orders with WooCommerce"
 
     def handle(self, *args, **kwargs):
-        """Main function to start scraping RetailVista orders."""
-        self.stdout.write("🔄 Starting RetailVista order sync...")
+        sync_time = now().strftime("%Y-%m-%d %H:%M:%S")
+        unmatched_orders = []
 
-        # ✅ Setup WebDriver
-        driver = setup_driver()
-        if not driver:
-            self.stdout.write("❌ Failed to initialize WebDriver.")
-            return
+        with open(LOG_FILE, "a", encoding="utf-8") as logfile:
 
-        # ✅ Select the Sync Date (Yesterday's Orders)
-        selected_date = (now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+            def log(msg):
+                self.stdout.write(msg)
+                logfile.write(f"{msg}\n")
 
-        # ✅ Scrape Orders
-        result = scrape_orders(self.stdout.write, driver, selected_date)
+            log(f"\n================== SYNC START: {sync_time} ==================\n")
 
-        # ✅ Print Final Status
-        self.stdout.write(result["message"])
+            driver = setup_driver()
+            if not driver:
+                log("❌ Failed to initialize WebDriver.")
+                return
+
+            selected_date = (now() - datetime.timedelta(days=14)).strftime("%Y-%m-%d")
+
+            def log_message(msg):
+                log(msg)
+                if msg.startswith("❌ No matching WooCommerce order"):
+                    unmatched_orders.append(msg)
+
+            result = scrape_orders(log_message, driver, selected_date)
+
+            log("\n================== SYNC SUMMARY ==================")
+            log(f"🕓 Sync Time: {sync_time}")
+            log(result["message"])
+            log(f"🔍 Orders on RV but NOT in WooCommerce: {len(unmatched_orders)}")
+
+            if unmatched_orders:
+                log("❗ List of missing WooCommerce orders:")
+                for msg in unmatched_orders:
+                    log(f" - {msg}")
+
+            log("\n================== SYNC COMPLETE ==================\n")
 
 
 def setup_driver():

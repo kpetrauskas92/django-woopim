@@ -5,7 +5,6 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from orders.models import Order, OrderItem
 from django.utils.timezone import now
-from scraper.utils import login_to_retail_vista, open_saleorder_maintenance, select_saleorder_type
 
 
 class Command(BaseCommand):

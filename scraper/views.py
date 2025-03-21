@@ -1,12 +1,13 @@
 import os
 import json
+from django.conf import settings
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import now
 from .utils import setup_driver, scrape_orders, cancel_sync, is_sync_canceled
 
 SYNC_IN_PROGRESS = False
-LOG_FILE = "sync_log.txt"
+LOG_FILE = os.path.join(settings.BASE_DIR, "logs", "rv_sync.log")
 
 @csrf_exempt
 def sync_rv_orders(request):
