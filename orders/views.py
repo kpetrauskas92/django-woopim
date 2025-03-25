@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Order, RetailVistaOrder
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 from .utils import sync_woocommerce_orders
 from datetime import timedelta
 from django.utils.timezone import now
@@ -12,6 +13,7 @@ from django.conf import settings
 from woocommerce import API
 
 
+@login_required
 def order_list(request):
     sort_by = request.GET.get("sort", "-order_date")
     filter_status = request.GET.get("status", "")
