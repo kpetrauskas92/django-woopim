@@ -12,5 +12,5 @@ urlpatterns = [
     path("scraper/", include("scraper.urls")),
 
     # Redirect root URL to dashboard (or change to 'products/' if preferred)
-    path('', RedirectView.as_view(url='/dashboard/', permanent=False)),
+    path('', RedirectView.as_view(url='/orders/', permanent=False)),
 ]

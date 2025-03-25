@@ -10,7 +10,7 @@
   }
 </style>
 
-
+{% if request.user.is_superuser %}
 <!-- Container 1: Syncing with Guided Steps in Collapsibles -->
 <div class="mx-auto bg-white p-6 rounded-lg shadow-md mb-6">
     <h1 class="text-3xl font-bold mb-4 text-center">Sync Orders</h1>
@@ -79,9 +79,23 @@
       
     </div>
   </div>
-
+  {% endif %}
 <!-- Container 2: Orders with Filtering -->
 <div class="mx-auto bg-white p-6 rounded-lg shadow-md">
+  {% if flagged_orders %}
+  <div class="bg-red-100 border border-red-400 text-red-800 px-4 py-3 rounded mb-4">
+    <strong class="font-bold">⚠️ Attention Needed:</strong>
+    <ul class="mt-2 list-disc list-inside text-sm">
+      {% for order in flagged_orders %}
+        <li>
+          Order <strong>{{ order.order_id }}</strong> ({{ order.customer_name }}) 
+          not RV closed since <strong>{{ order.order_date|date:"M d, Y" }}</strong>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
     <div class="w-full text-center">
         <div class="flex flex-wrap justify-center gap-2">
           <span class="bg-yellow-200 text-yellow-800 px-3 py-1 rounded">⏳ Pending: {{ status_counts.pending }}</span>
@@ -201,6 +215,18 @@
     </div>
   </div>
 </dialog>
+<div class="mt-6 flex justify-center">
+  <div class="join">
+    {% if orders.has_previous %}
+      <a href="?page={{ orders.previous_page_number }}&sort={{ sort_by }}&status={{ filter_status }}&rv_status={{ rv_status }}" class="join-item btn">← Prev</a>
+    {% endif %}
+    <span class="join-item btn btn-disabled">Page {{ orders.number }} of {{ orders.paginator.num_pages }}</span>
+    {% if orders.has_next %}
+      <a href="?page={{ orders.next_page_number }}&sort={{ sort_by }}&status={{ filter_status }}&rv_status={{ rv_status }}" class="join-item btn">Next →</a>
+    {% endif %}
+  </div>
+</div>
+
 
 {% if messages %}
   {% for message in messages %}

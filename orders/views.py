@@ -3,6 +3,9 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Order, RetailVistaOrder
 from django.views.decorators.csrf import csrf_exempt
 from .utils import sync_woocommerce_orders
+from datetime import timedelta
+from django.utils.timezone import now
+from django.core.paginator import Paginator
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.conf import settings
@@ -10,35 +13,39 @@ from woocommerce import API
 
 
 def order_list(request):
-    # Get filtering and sorting parameters from the request
-    sort_by = request.GET.get("sort", "-order_date")  # Default: newest first
-    filter_status = request.GET.get("status", "")  # Default: no filter
-    rv_status = request.GET.get("rv_status", "")  # New filter for RV Order Status
+    sort_by = request.GET.get("sort", "-order_date")
+    filter_status = request.GET.get("status", "")
+    rv_status = request.GET.get("rv_status", "")
+    page = request.GET.get("page", 1)
 
-    # Fetch orders with filtering and sorting
     orders = Order.objects.all()
-    
-    if filter_status:  # Apply status filter if selected
+
+    if filter_status:
         orders = orders.filter(status=filter_status)
 
-    orders = orders.order_by(sort_by)  # Apply sorting
+    orders = orders.order_by(sort_by)
+    orders = list(orders)  # evaluate queryset
 
-    # Evaluate orders to allow filtering on computed attributes
-    orders = list(orders)
-    
-    # Get associated RetailVista orders and annotate orders
+    # Enrich orders with RV data
+    flagged_orders = []
+    two_weeks_ago = now() - timedelta(weeks=2)
     for order in orders:
         rv_order = order.get_rv_order()
-        order.rv_synced = order.is_synced_with_rv()  # True/False
+        order.rv_synced = order.is_synced_with_rv()
         order.rv_order_status = rv_order.order_status if rv_order else None
         order.rv_canceled = rv_order.canceled_status if rv_order else None
         order.rv_last_synced = rv_order.last_synced if rv_order else None
 
-    # Filter orders by RV Order Status if a filter is provided
+        # Flag orders not RV closed and older than 2 weeks
+        if (order.rv_order_status != "closed") and (order.order_date < two_weeks_ago):
+            flagged_orders.append(order)
+
     if rv_status:
         orders = [order for order in orders if (order.rv_order_status or "").lower() == rv_status.lower()]
 
-    # Count orders by status
+    paginator = Paginator(orders, 20)
+    paginated_orders = paginator.get_page(page)
+
     status_counts = {
         "pending": Order.objects.filter(status="pending").count(),
         "processing": Order.objects.filter(status="processing").count(),
@@ -50,11 +57,12 @@ def order_list(request):
     }
 
     return render(request, 'order_list.html', {
-        "orders": orders,
+        "orders": paginated_orders,
         "sort_by": sort_by,
         "filter_status": filter_status,
-        "rv_status": rv_status,  # Pass the selected RV status back to the template
+        "rv_status": rv_status,
         "status_counts": status_counts,
+        "flagged_orders": flagged_orders[:5],  # show top 5 critical ones
     })
 
 
