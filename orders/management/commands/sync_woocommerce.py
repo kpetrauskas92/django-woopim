@@ -20,7 +20,7 @@ class Command(BaseCommand):
         per_page = 10
         page = 1
         new_orders = 0
-        days_back = 5  # 🔁 Change as needed
+        days_back = 2
 
         from_date = now() - datetime.timedelta(days=days_back)
         from_date_str = from_date.strftime("%Y-%m-%dT%H:%M:%S")
