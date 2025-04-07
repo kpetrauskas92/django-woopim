@@ -11,6 +11,13 @@ from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.conf import settings
 from woocommerce import API
+from functools import lru_cache
+
+
+# Local in-memory caching for request-lifetime
+@lru_cache(maxsize=None)
+def get_cached_rv_order(reference_code):
+    return RetailVistaOrder.objects.filter(reference_code=reference_code).first()
 
 
 @login_required
@@ -20,33 +27,32 @@ def order_list(request):
     rv_status = request.GET.get("rv_status", "")
     page = request.GET.get("page", 1)
 
+    # Filter and sort orders
     orders = Order.objects.all()
-
     if filter_status:
         orders = orders.filter(status=filter_status)
-
     orders = orders.order_by(sort_by)
-    orders = list(orders)  # evaluate queryset
 
-    # Enrich orders with RV data
-    flagged_orders = []
+    paginator = Paginator(orders, 20)
+    paginated_orders = paginator.get_page(page)
+
     two_weeks_ago = now() - timedelta(weeks=2)
-    for order in orders:
-        rv_order = order.get_rv_order()
-        order.rv_synced = order.is_synced_with_rv()
+    flagged_orders = []
+
+    for order in paginated_orders:
+        rv_order = get_cached_rv_order(order.order_id)
+        order.rv_order = rv_order
+        order.rv_synced = order.is_synced_with_rv() if rv_order else False
         order.rv_order_status = rv_order.order_status if rv_order else None
         order.rv_canceled = rv_order.canceled_status if rv_order else None
         order.rv_last_synced = rv_order.last_synced if rv_order else None
 
-        # Flag orders not RV closed and older than 2 weeks
         if (order.rv_order_status != "closed") and (order.order_date < two_weeks_ago):
             flagged_orders.append(order)
 
+    # Apply rv_status filter after RV data is attached
     if rv_status:
-        orders = [order for order in orders if (order.rv_order_status or "").lower() == rv_status.lower()]
-
-    paginator = Paginator(orders, 20)
-    paginated_orders = paginator.get_page(page)
+        paginated_orders = [order for order in paginated_orders if (order.rv_order_status or "").lower() == rv_status.lower()]
 
     status_counts = {
         "pending": Order.objects.filter(status="pending").count(),
@@ -64,10 +70,11 @@ def order_list(request):
         "filter_status": filter_status,
         "rv_status": rv_status,
         "status_counts": status_counts,
-        "flagged_orders": flagged_orders[:5],  # show top 5 critical ones
+        "flagged_orders": flagged_orders[:5],  # Show top 5 critical ones
     })
 
 
+@login_required
 def order_detail(request, order_id):
     order = get_object_or_404(Order, order_id=order_id)
     
